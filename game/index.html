@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VIGIL // FOUNDRY — a three.js tactical FPS</title>
+<style>
+  :root {
+    --canvas: #141210; --surface: rgba(16,14,12,.88); --hairline: #3a3128;
+    --ink: #f2ead8; --muted: #b8ab90; --accent: #f2a541; --attack: #ff7a2a; --defend: #3fa7ff;
+    --font-ui: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-readout: ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--canvas); color: var(--ink); font-family: var(--font-ui); }
+  #game, #game canvas { position: fixed; inset: 0; display: block; }
+  #hud { position: fixed; inset: 0; pointer-events: none; }
+  .panel { background: var(--surface); border: 1px solid var(--hairline); border-radius: 4px; }
+
+  /* top bar: teams, scores, round pips, timer, ROUND x OF 16 */
+  #topbar { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 14px; align-items: center; padding: 6px 14px; font-family: var(--font-readout); font-size: 13px; white-space: nowrap; }
+  #topbar .teamA { color: var(--attack); font-weight: 700; }
+  #topbar .teamD { color: var(--defend); font-weight: 700; }
+  #score { font-size: 17px; font-weight: 700; white-space: nowrap; }
+  #timer { font-size: 17px; font-weight: 700; min-width: 52px; text-align: center; }
+  #timer.urgent { color: #ff5040; }
+  .pip { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #3a332a; margin: 0 1px; }
+  .pip.won { background: var(--c, #f2a541); }
+  .pipSep { color: var(--muted); margin: 0 4px; }
+  #roundLabel { color: var(--muted); font-size: 12px; }
+  #planLabel { position: fixed; top: 54px; left: 50%; transform: translateX(-50%); font-family: var(--font-readout); font-size: 11px; color: var(--accent); letter-spacing: 1px; }
+  #roleLabel { position: fixed; top: 72px; left: 50%; transform: translateX(-50%); font-family: var(--font-readout); font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+
+  /* crosshair with bloom gap + hitmarker */
+  #crosshair { position: fixed; left: 50%; top: 50%; width: 30px; height: 30px; transform: translate(-50%,-50%); --gap: 5px; }
+  #crosshair i { position: absolute; background: var(--ink); opacity: .9; }
+  #crosshair i:nth-child(1) { left: 14px; top: calc(15px - var(--gap) - 7px); width: 2px; height: 7px; }
+  #crosshair i:nth-child(2) { left: 14px; top: calc(15px + var(--gap)); width: 2px; height: 7px; }
+  #crosshair i:nth-child(3) { top: 14px; left: calc(15px - var(--gap) - 7px); height: 2px; width: 7px; }
+  #crosshair i:nth-child(4) { top: 14px; left: calc(15px + var(--gap)); height: 2px; width: 7px; }
+  #crosshair::after { content: ''; position: absolute; left: 14px; top: 14px; width: 2px; height: 2px; background: var(--ink); }
+  #hitmarker { position: fixed; left: 50%; top: 50%; width: 26px; height: 26px; transform: translate(-50%,-50%) rotate(45deg); opacity: 0; transition: opacity 90ms linear; }
+  #hitmarker.on { opacity: 1; }
+  #hitmarker i { position: absolute; background: var(--accent); }
+  #hitmarker.hs i { background: #ffd700; }
+  #hitmarker i:nth-child(1) { left: 12px; top: 0; width: 2px; height: 8px; }
+  #hitmarker i:nth-child(2) { left: 12px; bottom: 0; width: 2px; height: 8px; }
+  #hitmarker i:nth-child(3) { top: 12px; left: 0; height: 2px; width: 8px; }
+  #hitmarker i:nth-child(4) { top: 12px; right: 0; height: 2px; width: 8px; }
+
+  /* damage direction arc + flash whiteout */
+  #damageArc { position: fixed; left: 50%; top: 50%; width: 190px; height: 190px; transform: translate(-50%,-50%) rotate(var(--rot, 0deg)); border-radius: 50%; border-top: 5px solid rgba(255,60,40,.85); opacity: 0; transition: opacity 300ms; pointer-events: none; }
+  #damageArc.show { opacity: 1; }
+  #flashOverlay { position: fixed; inset: 0; background: #fff; opacity: 0; transition: opacity 600ms; pointer-events: none; }
+
+  /* kill feed + radio feed */
+  #killfeed { position: fixed; top: 92px; right: 16px; text-align: right; font-family: var(--font-readout); font-size: 13px; line-height: 1.7; }
+  #killfeed .kfW { color: var(--muted); }
+  #radio { position: fixed; top: 92px; left: 16px; font-family: var(--font-readout); font-size: 12px; line-height: 1.7; max-width: 380px; }
+  #radio .radioLine { background: rgba(16,14,12,.72); border-left: 3px solid var(--accent); padding: 3px 8px; margin-bottom: 4px; }
+  #radio .radioTag { color: var(--accent); font-weight: 700; }
+
+  /* radar: filled floor plan */
+  #radarWrap { position: fixed; left: 16px; bottom: 16px; }
+  #radar { display: block; border: 1px solid var(--hairline); background: rgba(12,12,14,.85); }
+  #radarLabel { text-align: center; font-family: var(--font-readout); font-size: 10px; color: var(--muted); letter-spacing: 2px; padding-top: 3px; }
+
+  /* bottom-right vitals */
+  #vitals { position: fixed; right: 16px; bottom: 16px; text-align: right; font-family: var(--font-readout); }
+  #health { font-size: 34px; font-weight: 700; line-height: 1; }
+  #health.low { color: #ff5040; }
+  #armor { font-size: 13px; color: var(--muted); }
+  #money { font-size: 16px; color: var(--accent); margin-top: 2px; }
+  #ammo { font-size: 24px; font-weight: 700; margin-top: 4px; }
+  #ammo span { display: block; font-size: 11px; color: var(--muted); font-weight: 400; }
+  #slots { position: fixed; right: 16px; bottom: 132px; display: flex; gap: 6px; font-family: var(--font-readout); font-size: 11px; }
+  #slots .slot { padding: 4px 8px; background: var(--surface); border: 1px solid var(--hairline); color: var(--muted); }
+  #slots .slot.active { border-color: var(--accent); color: var(--ink); }
+  #utility { position: fixed; right: 16px; bottom: 168px; display: flex; gap: 6px; font-family: var(--font-readout); font-size: 11px; }
+  #utility .util { padding: 4px 8px; background: var(--surface); border: 1px solid var(--hairline); }
+  .key { display: inline-block; min-width: 15px; text-align: center; background: #2c2620; border: 1px solid #555; border-radius: 3px; padding: 0 3px; margin-right: 5px; color: var(--ink); }
+
+  /* centre banner */
+  #banner { position: fixed; left: 50%; top: 26%; transform: translateX(-50%); text-align: center; opacity: 0; transition: opacity 250ms; }
+  #banner.show { opacity: 1; }
+  #banner .bannerMain { font-size: 30px; font-weight: 800; letter-spacing: 4px; color: var(--accent); text-shadow: 0 2px 12px rgba(0,0,0,.8); }
+  #banner .bannerSub { font-family: var(--font-readout); font-size: 13px; color: var(--ink); margin-top: 4px; }
+  #hint { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); font-family: var(--font-readout); font-size: 12px; color: var(--muted); }
+
+  /* overlays: deploy, buy, scoreboard, AAR */
+  .overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(8,6,5,.72); pointer-events: auto; z-index: 10; }
+  .overlay.show { display: flex; }
+  .card { width: 560px; max-width: 92vw; padding: 28px 32px; background: #191512; border: 1px solid var(--hairline); border-radius: 6px; }
+  .card h1 { margin: 0 0 4px; font-size: 30px; letter-spacing: 3px; }
+  .card h1 .vigil { color: var(--accent); }
+  .card h2 { margin: 0 0 14px; font-size: 13px; color: var(--muted); font-weight: 400; letter-spacing: 1px; }
+  .card p { font-size: 13px; line-height: 1.6; color: var(--muted); }
+  .card .mapName { font-family: var(--font-readout); font-size: 15px; color: var(--accent); }
+  .card .planLine, .card .roleLine { font-family: var(--font-readout); font-size: 13px; color: var(--ink); margin: 6px 0; }
+  .card label { display: block; font-size: 12px; color: var(--muted); margin: 14px 0 4px; }
+  .card input[type=range] { width: 100%; }
+  .btn { display: inline-block; margin-top: 18px; padding: 11px 26px; background: var(--accent); color: #181210; border: none; border-radius: 4px; font-size: 15px; font-weight: 700; cursor: pointer; letter-spacing: 1px; }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--hairline); margin-left: 8px; }
+  .controls { font-family: var(--font-readout); font-size: 12px; line-height: 1.9; color: var(--muted); margin-top: 14px; }
+  .buyMoney { font-family: var(--font-readout); font-size: 15px; color: var(--accent); margin-bottom: 12px; }
+  .buyGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .buyItem { display: flex; gap: 8px; align-items: center; padding: 8px 10px; background: #221d18; border: 1px solid var(--hairline); border-radius: 4px; cursor: pointer; font-size: 13px; }
+  .buyItem:hover { border-color: var(--accent); }
+  .buyItem.poor { opacity: .45; }
+  .buyItem.owned { border-color: var(--accent); }
+  .buyItem .buyName { flex: 1; }
+  .buyItem .buyPrice { color: var(--accent); font-family: var(--font-readout); }
+  #scoreboard .card { width: 620px; }
+  #scoreboard table { width: 100%; border-collapse: collapse; font-family: var(--font-readout); font-size: 13px; }
+  #scoreboard td, #scoreboard th { padding: 5px 8px; text-align: left; border-bottom: 1px solid #2c2620; }
+  #scoreboard tr.me td { color: var(--accent); }
+  .sbScore { font-family: var(--font-readout); font-size: 14px; margin-bottom: 10px; }
+  .aarResult { font-size: 34px; font-weight: 800; letter-spacing: 5px; color: #ff5040; }
+  .aarResult.won { color: var(--accent); }
+  .aarRank { font-size: 44px; font-weight: 800; color: var(--accent); font-family: var(--font-readout); }
+  .aarRow { display: flex; justify-content: space-between; font-family: var(--font-readout); font-size: 13px; padding: 4px 0; border-bottom: 1px solid #2c2620; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/three.module.min.js"
+  }
+}
+</script>
+</head>
+<body>
+<div id="game"></div>
+<div id="hud">
+  <div id="topbar" class="panel"><span class="teamA">EMBER JACKALS</span><span id="pips"></span><span id="score">0 — 0</span><span class="teamD">HARBOR WARDENS</span><span id="roundLabel">ROUND 1 OF 16</span><span id="timer">1:40</span></div>
+  <div id="planLabel"></div><div id="roleLabel"></div>
+  <div id="crosshair"><i></i><i></i><i></i><i></i></div>
+  <div id="hitmarker"><i></i><i></i><i></i><i></i></div>
+  <div id="damageArc"></div>
+  <div id="flashOverlay"></div>
+  <div id="killfeed"></div>
+  <div id="radio"></div>
+  <div id="radarWrap"><canvas id="radar" width="190" height="150"></canvas><div id="radarLabel">FOUNDRY YARD</div></div>
+  <div id="slots"></div>
+  <div id="utility"></div>
+  <div id="vitals"><div id="health">100</div><div id="armor">0</div><div id="money">$800</div><div id="ammo"><b>30</b> / 120<span>Kestrel-7</span></div></div>
+  <div id="banner"><div class="bannerMain"></div><div class="bannerSub"></div></div>
+  <div id="hint"></div>
+</div>
+
+<div id="deploy" class="overlay"><div class="card">
+  <h1><span class="vigil">VIGIL</span> // FOUNDRY</h1>
+  <h2>5v5 round-based tactical FPS — first to 9 rounds, plant or eliminate</h2>
+  <div class="mapName"></div>
+  <div class="planLine"></div>
+  <div class="roleLine"></div>
+  <p>Ember Jackals attack: plant the charge at Site A or Site B. Harbor Wardens defend. Buy between rounds with B. Q smoke, G flash, E plant / defuse, M switch map next round.</p>
+  <label for="sens">Mouse sensitivity</label>
+  <input id="sens" type="range" min="0.3" max="2.5" step="0.1" value="1">
+  <button class="btn deployBtn">DEPLOY</button>
+  <div class="controls">WASD move · Shift silent walk · C crouch · Space jump · R reload · 1/2/3/4 weapons · Q/G utility · E plant/defuse · TAB scoreboard · ESC pause</div>
+</div></div>
+
+<div id="buy" class="overlay"><div class="card">
+  <h1>BUY MENU</h1>
+  <div class="buyMoney"></div>
+  <div class="buyGrid"></div>
+  <p>Number keys 1–9 buy. B or ESC closes. Round starts when the timer ends.</p>
+</div></div>
+
+<div id="scoreboard" class="overlay"><div class="card">
+  <h1>SCOREBOARD</h1>
+  <div class="sbScore"></div>
+  <table><thead><tr><th>Player</th><th>Team</th><th>K</th><th>D</th><th>$</th></tr></thead><tbody></tbody></table>
+</div></div>
+
+<div id="aar" class="overlay"><div class="card">
+  <div class="aarResult">VICTORY</div>
+  <div>Tactical Rank: <span class="aarRank">B</span></div>
+  <div class="aarStats"></div>
+  <button class="btn againBtn">PLAY AGAIN</button>
+  <button class="btn ghost switchBtn">SWITCH MAP</button>
+  <button class="btn ghost waveBtn">NEXT WAVE</button>
+</div></div>
+
+<script type="module" src="./src/staging.js"></script>
+</body>
+</html>
