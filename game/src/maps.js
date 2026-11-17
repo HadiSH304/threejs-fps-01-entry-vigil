@@ -8,7 +8,7 @@ export const MAPS = {
     id: 'foundry', name: 'Foundry Yard', short: 'FOUNDRY', outdoor: true,
     bounds: { x: 34, z: 26 }, // half-extents of the playable yard
     palette: {
-      sky: ['#2b1a12', '#c96a1e', '#f2a541'], // dusk gradient, warm amber
+      sky: ['#3d2b4a', '#8a4a44', '#f2a541'], // dusk: violet zenith -> rose -> amber horizon
       fog: 0x3a2418, fogDensity: 0.011,
       hemiSky: 0xffd9a0, hemiGround: 0x4a2c1a, hemiInt: 0.85,
       sun: 0xffb066, sunInt: 2.4, sunPos: [-28, 38, 18],

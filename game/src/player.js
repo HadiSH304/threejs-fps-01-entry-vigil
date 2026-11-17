@@ -177,7 +177,7 @@ export class Player {
     const shooter = { pos: this.pos, crouched: this.crouched, weapon: w, team: this.team };
     const res = fireHitscan(shooter, dir, this.game.world, this.game.actors, this.game.fx);
     const muzzlePos = this.pos.clone(); muzzlePos.y += 1.5;
-    this.game.fx.muzzle(muzzlePos);
+    this.game.fx.muzzle(muzzlePos, dir);
     this.game.audio.shot(w.id, 0);
     this.game.telemetry.shotFired();
     this.bloom = Math.min(ACCURACY.maxBloom, this.bloom + ACCURACY.bloomPerShot);

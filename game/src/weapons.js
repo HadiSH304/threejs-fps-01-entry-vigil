@@ -117,25 +117,36 @@ export function buildViewmodel(weaponId) {
     g.add(vmBox(0.09, 0.11, 0.55, dark, 0, 0, 0));            // receiver
     g.add(vmCyl(0.035, 0.5, mid, 0, 0.01, -0.5));              // barrel
     g.add(vmBox(0.06, 0.2, 0.12, VM_PART.wood, 0, -0.14, 0.08)); // curved magazine
-    g.add(vmBox(0.05, 0.07, 0.1, light, 0, 0.09, -0.12));     // front sight post
+    g.add(vmBox(0.05, 0.12, 0.03, light, 0, 0.1, -0.12));     // tall front sight blade
+    g.add(vmBox(0.09, 0.02, 0.05, light, 0, 0.15, -0.12));    // front sight crossbar (T silhouette)
+    g.add(vmBox(0.09, 0.05, 0.03, light, 0, 0.08, 0.2));      // rear sight block
+    g.add(vmBox(0.015, 0.07, 0.03, light, -0.045, 0.1, 0.2)); // rear sight ears
+    g.add(vmBox(0.015, 0.07, 0.03, light, 0.045, 0.1, 0.2));
     g.add(vmBox(0.08, 0.05, 0.16, VM_PART.wood, 0, -0.01, 0.32)); // wooden stock
     g.add(vmBox(0.05, 0.1, 0.06, dark, 0, -0.1, 0.2));        // grip
     g.add(vmBox(0.02, 0.03, 0.3, acc, 0.045, 0.06, -0.1));    // amber accent rail
+    g.add(vmBox(0.095, 0.02, 0.5, acc, 0, 0.065, -0.02));     // amber top band — reads at small size
   } else if (weaponId === 'bastion') {
     g.add(vmBox(0.09, 0.1, 0.5, dark, 0, 0, 0));
     g.add(vmCyl(0.03, 0.45, mid, 0, 0.01, -0.46));
     g.add(vmBox(0.06, 0.16, 0.1, mid, 0, -0.12, 0.06));       // straight magazine
     g.add(vmBox(0.1, 0.04, 0.3, light, 0, 0.075, -0.05));     // carry handle / sight rail
+    g.add(vmBox(0.015, 0.06, 0.03, light, -0.045, 0.11, 0.08)); // rear sight ears
+    g.add(vmBox(0.015, 0.06, 0.03, light, 0.045, 0.11, 0.08));
+    g.add(vmBox(0.04, 0.09, 0.03, light, 0, 0.1, -0.16));     // front sight blade
     g.add(vmBox(0.07, 0.09, 0.14, dark, 0, -0.01, 0.3));      // stock
     g.add(vmBox(0.05, 0.1, 0.06, dark, 0, -0.1, 0.18));
     g.add(vmBox(0.02, 0.025, 0.28, acc, -0.045, 0.055, -0.08));
+    g.add(vmBox(0.095, 0.02, 0.46, acc, 0, 0.06, -0.02));     // amber top band
   } else if (weaponId === 'raptor') {
     g.add(vmBox(0.08, 0.09, 0.4, dark, 0, 0, 0));
     g.add(vmCyl(0.04, 0.3, mid, 0, 0.01, -0.32));
     g.add(vmBox(0.05, 0.22, 0.09, mid, 0, -0.15, 0.1));       // long SMG magazine
     g.add(vmBox(0.07, 0.06, 0.2, light, 0, 0.07, -0.1));      // top sight
+    g.add(vmBox(0.04, 0.09, 0.03, light, 0, 0.1, -0.16));     // front sight blade
     g.add(vmBox(0.06, 0.08, 0.12, dark, 0, -0.01, 0.26));     // folding stock
     g.add(vmBox(0.02, 0.03, 0.2, acc, 0.04, 0.05, -0.05));
+    g.add(vmBox(0.085, 0.02, 0.36, acc, 0, 0.055, -0.02));    // amber top band
   } else if (weaponId === 'hinge') {
     g.add(vmBox(0.06, 0.09, 0.24, dark, 0, 0, 0));            // slide
     g.add(vmBox(0.055, 0.05, 0.22, mid, 0, -0.06, 0.01));     // frame
@@ -163,6 +174,29 @@ export function createEffects(scene) {
   const flash = new THREE.PointLight(0xffc266, 0, 9, 1.8);
   scene.add(flash);
   let flashUntil = 0;
+  // Soft round sprite: radial gradient, opaque core fading to nothing. Point
+  // sprites without a map render as hard squares — the flat red rectangles
+  // that haunted the v1 cover. Everything below uses this texture.
+  const spriteTex = (() => {
+    const c = document.createElement('canvas');
+    c.width = 64; c.height = 64;
+    const x = c.getContext('2d');
+    const g = x.createRadialGradient(32, 32, 1, 32, 32, 30);
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.4, 'rgba(255,255,255,0.85)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  })();
+  const flashSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: spriteTex, color: 0xffc266, transparent: true, opacity: 0.95,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  }));
+  flashSprite.scale.setScalar(0.4);
+  flashSprite.visible = false;
+  scene.add(flashSprite);
 
   function tracer(from, to, team) {
     const geo = new THREE.BufferGeometry().setFromPoints([from, to]);
@@ -173,26 +207,31 @@ export function createEffects(scene) {
     pool.push({ obj: line, until: performance.now() + 90, kind: 'line' });
   }
   function impact(point, mat, headshot) {
-    const n = headshot ? 14 : 8;
+    const n = headshot ? 16 : 8; // headshots burst gold sparks
     const geo = new THREE.BufferGeometry();
     const pos = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) {
-      pos[i * 3] = point.x + (Math.random() - 0.5) * 0.3;
-      pos[i * 3 + 1] = point.y + (Math.random() - 0.5) * 0.3;
-      pos[i * 3 + 2] = point.z + (Math.random() - 0.5) * 0.3;
+      pos[i * 3] = point.x + (Math.random() - 0.5) * 0.18;
+      pos[i * 3 + 1] = point.y + (Math.random() - 0.5) * 0.18;
+      pos[i * 3 + 2] = point.z + (Math.random() - 0.5) * 0.18;
     }
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     const pts = new THREE.Points(geo, new THREE.PointsMaterial({
+      map: spriteTex,
       color: headshot ? 0xffd700 : (mat === 'flesh' ? 0xc03028 : 0xffc266),
-      size: 0.09, transparent: true, opacity: 0.95,
+      size: headshot ? 0.07 : 0.05, transparent: true, opacity: 0.9, depthWrite: false,
     }));
     scene.add(pts);
     pool.push({ obj: pts, until: performance.now() + 160, kind: 'points' });
   }
-  function muzzle(pos) {
+  function muzzle(pos, dir) {
     flash.position.copy(pos);
     flash.intensity = 55;
     flashUntil = performance.now() + 55;
+    // Visible flash sprite just ahead of the muzzle, along the shot line.
+    flashSprite.position.copy(pos);
+    if (dir) flashSprite.position.addScaledVector(dir, 0.55);
+    flashSprite.visible = true;
   }
   function update(now) {
     for (let i = pool.length - 1; i >= 0; i--) {
@@ -203,7 +242,10 @@ export function createEffects(scene) {
         pool.splice(i, 1);
       }
     }
-    if (now > flashUntil && flash.intensity > 0) flash.intensity = 0;
+    if (now > flashUntil) {
+      if (flash.intensity > 0) flash.intensity = 0;
+      if (flashSprite.visible) flashSprite.visible = false;
+    }
   }
   return { tracer, impact, muzzle, update };
 }

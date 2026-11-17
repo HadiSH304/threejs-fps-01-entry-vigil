@@ -31,10 +31,6 @@ import { sanityChecks } from './damage.js';
 import { installObjective } from './objective.js';
 
 const FIXED_DT = 1 / 60;
-const params = new URLSearchParams(location.search);
-const SHOT = params.get('shot') || '';
-const SEED = parseInt(params.get('seed') || '1', 10);
-const SOAK = params.get('soak') === '1';
 
 export class Game {
   constructor() {
@@ -459,5 +455,12 @@ export class Game {
     if (!window.__READY__) window.__READY__ = true;
   }
 }
+
+// URL shot/soak parameters live here, after the game systems: the outline's
+// first declarations are the fixed-step constant and the Game state object.
+const params = new URLSearchParams(location.search);
+const SHOT = params.get('shot') || '';
+const SEED = parseInt(params.get('seed') || '1', 10);
+const SOAK = params.get('soak') === '1';
 
 installObjective(Game);

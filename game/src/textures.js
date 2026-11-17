@@ -229,19 +229,25 @@ export function makeVerticalSign(text, seed = 91) {
 }
 
 export function makeSkyGradient(colors, seed = 101) {
+  const rng = mulberry32(seed);
   const [c, ctx] = canvas(256, 512);
+  // Canvas y=0 is the zenith, y=256 the horizon, y=512 the nadir (below the
+  // floor, almost never seen): violet zenith -> warm mid -> amber horizon.
   const g = ctx.createLinearGradient(0, 0, 0, 512);
-  g.addColorStop(0, colors[0]); g.addColorStop(0.5, colors[1]); g.addColorStop(0.78, colors[2]); g.addColorStop(1, colors[1]);
+  g.addColorStop(0, colors[0]); g.addColorStop(0.3, colors[1]);
+  g.addColorStop(0.5, colors[2]); g.addColorStop(0.66, colors[1]); g.addColorStop(1, colors[0]);
   ctx.fillStyle = g; ctx.fillRect(0, 0, 256, 512);
-  const glow = ctx.createRadialGradient(150, 330, 8, 150, 330, 150);
-  glow.addColorStop(0, 'rgba(255, 225, 160, 0.95)');
-  glow.addColorStop(0.35, 'rgba(255, 180, 90, 0.55)');
+  const glow = ctx.createRadialGradient(150, 245, 6, 150, 245, 170); // low sun, on the horizon
+  glow.addColorStop(0, 'rgba(255, 228, 170, 0.95)');
+  glow.addColorStop(0.35, 'rgba(255, 182, 95, 0.5)');
   glow.addColorStop(1, 'rgba(255, 150, 60, 0)');
   ctx.fillStyle = glow; ctx.fillRect(0, 0, 256, 512);
-  ctx.fillStyle = 'rgba(255, 200, 140, 0.10)';
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 6; i++) { // thin horizontal cloud bands, seeded so every load matches
+    const y = 46 + i * 34 + rng() * 14;
+    const w = 90 + rng() * 70, h = 4 + rng() * 5;
+    ctx.fillStyle = i < 2 ? `rgba(196, 168, 214, ${0.05 + rng() * 0.05})` : `rgba(255, 214, 170, ${0.05 + rng() * 0.05})`;
     ctx.beginPath();
-    ctx.ellipse(30 + ((i * 37) % 200), 60 + (i % 3) * 55, 42, 9, 0, 0, Math.PI * 2);
+    ctx.ellipse(40 + rng() * 176, y, w, h, 0, 0, Math.PI * 2);
     ctx.fill();
   }
   const t = new THREE.CanvasTexture(c);

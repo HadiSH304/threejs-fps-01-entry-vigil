@@ -61,7 +61,7 @@ export function installStaging(GameClass) {
         const to = g.camera.position.clone();
         to.x += (Math.random() - 0.5) * 1.6; to.y += (Math.random() - 0.5) * 0.8; to.z += (Math.random() - 0.5) * 1.6;
         g.fx.tracer(from, to, 'defend');
-        g.fx.muzzle(from);
+        g.fx.muzzle(from, new THREE.Vector3().subVectors(to, from).normalize());
         if (Math.random() < 0.5) g.fx.impact(to, 'flesh', false);
       }, 110);
     };

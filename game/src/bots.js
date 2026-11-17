@@ -268,6 +268,8 @@ export function buildBotMesh(bot, scene) {
   torso.position.y = 1.15; torso.castShadow = true; body.add(torso);
   const vest = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.4, 0.42), accent);
   vest.position.y = 1.22; body.add(vest);
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.07, 0.38), accent);
+  stripe.position.y = 1.52; body.add(stripe); // team shoulder band, reads at contact-sheet size
   const head = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.32, 0.3), skin);
   head.position.y = 1.68; head.castShadow = true; body.add(head);
   const helmet = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.14, 0.36), accent);
@@ -299,22 +301,23 @@ export function buildBotMesh(bot, scene) {
 
 function makeNameTag(name, role, color) {
   const c = document.createElement('canvas');
-  c.width = 256; c.height = 64;
+  c.width = 288; c.height = 72;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = 'rgba(10,10,12,0.78)';
-  ctx.fillRect(0, 0, 256, 64);
+  ctx.fillStyle = 'rgba(10,10,12,0.82)';
+  ctx.fillRect(0, 0, 288, 72);
   ctx.fillStyle = '#' + color.toString(16).padStart(6, '0');
-  ctx.fillRect(0, 0, 8, 64);
+  ctx.fillRect(0, 0, 10, 72); // team band, left
+  ctx.fillRect(0, 66, 288, 6); // team band, bottom — the tag reads as a team plate at small size
   ctx.fillStyle = '#f2ead8';
-  ctx.font = 'bold 26px monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.fillText(name, 20, 22);
+  ctx.font = 'bold 28px monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(name, 22, 24);
   ctx.fillStyle = '#b8b0a0';
-  ctx.font = '20px monospace';
-  ctx.fillText(role, 20, 48);
+  ctx.font = '22px monospace';
+  ctx.fillText(role, 22, 52);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
-  sprite.scale.set(1.5, 0.38, 1);
+  sprite.scale.set(1.7, 0.43, 1);
   return sprite;
 }
 
