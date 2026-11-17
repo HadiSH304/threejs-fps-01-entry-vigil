@@ -1,8 +1,4 @@
-// hud.js — every DOM surface: deploy screen, top bar (teams, scores, round
-// pips, timer, ROUND x OF 16), crosshair with bloom, hitmarker, kill feed,
-// radio feed with roles, FILLED floor-plan mini-radar (shaded rooms/walls,
-// site letters in coloured boxes, dots, callout blips, map name), weapon
-// slots, utility counts, vitals, scoreboard, buy menu, banners, AAR.
+// hud.js — every DOM surface.
 
 import { WEAPONS, UTILITY, ECONOMY, TIMERS } from './config.js';
 
@@ -13,11 +9,12 @@ export class HUD {
     for (const id of ['hud', 'topbar', 'crosshair', 'hitmarker', 'killfeed', 'radio',
       'radar', 'radarLabel', 'slots', 'utility', 'health', 'armor', 'ammo', 'money',
       'timer', 'score', 'pips', 'roundLabel', 'planLabel', 'roleLabel', 'banner',
-      'deploy', 'buy', 'scoreboard', 'aar', 'damageArc', 'flashOverlay', 'hint']) {
+      'deploy', 'buy', 'scoreboard', 'aar', 'damageArc', 'flashOverlay', 'hint',
+      'bossBar', 'coreBar']) {
       this.el[id] = document.getElementById(id);
     }
     this.radarCtx = this.el.radar?.getContext('2d');
-    this.blips = []; // {x, z, until, color}
+    this.blips = [];
     this.feed = [];
     this.radioLines = [];
     this.sensitivity = 1.0;
@@ -38,6 +35,29 @@ export class HUD {
   setPlan(planLabel, role) {
     this.el.planLabel.textContent = planLabel || '';
     this.el.roleLabel.textContent = role ? `YOUR ROLE: ${role}` : '';
+  }
+
+  setLS(wave, coreHp) {
+    this.el.roundLabel.textContent = `WAVE ${wave} / 7`;
+    this.el.pips.innerHTML = '';
+    this.el.planLabel.textContent = 'WIN: destroy the FOUNDRY WARDEN';
+    this.el.roleLabel.textContent = 'LOSE: the Furnace Core falls';
+    this.el.timer.textContent = '—';
+    this.el.coreBar.classList.add('show');
+    this.el.bossBar.classList.remove('show');
+    this.setCore(coreHp);
+  }
+  setCore(hp) {
+    this.el.score.textContent = `CORE ${Math.ceil(hp)}`;
+    this.el.coreBar.querySelector('i').style.width = `${Math.max(0, hp / 10)}%`;
+  }
+  setBoss(hp, max) {
+    this.el.bossBar.classList.add('show');
+    this.el.bossBar.querySelector('i').style.width = `${Math.max(0, hp / max * 100)}%`;
+  }
+  hideLS() {
+    this.el.coreBar.classList.remove('show');
+    this.el.bossBar.classList.remove('show');
   }
 
   setCrosshair(spreadPx) {
@@ -179,7 +199,7 @@ export class HUD {
     this.el.radarLabel.textContent = mapDef.name.toUpperCase();
   }
 
-  showDeploy(mapName, planLabel, role, sensitivity, onStart) {
+  showDeploy(mapName, planLabel, role, sensitivity, onStart, onLastStand) {
     const d = this.el.deploy;
     d.classList.add('show');
     d.querySelector('.mapName').textContent = mapName;
@@ -189,6 +209,8 @@ export class HUD {
     slider.value = sensitivity;
     slider.oninput = () => { this.sensitivity = parseFloat(slider.value); };
     d.querySelector('.deployBtn').onclick = () => { d.classList.remove('show'); onStart(); };
+    const lsBtn = d.querySelector('.lsBtn');
+    if (lsBtn && onLastStand) lsBtn.onclick = () => { d.classList.remove('show'); onLastStand(); };
   }
 
   showBuy(money, loadout, onBuy, onClose) {
@@ -218,7 +240,7 @@ export class HUD {
     this._buyHandler = (e) => {
       const map = { Digit1: 'kestrel', Digit2: 'bastion', Digit3: 'raptor', Digit4: 'anvil', Digit5: 'armor', Digit6: 'helmet', Digit7: 'kit', Digit8: 'smoke', Digit9: 'flash' };
       if (map[e.code]) onBuy(map[e.code]);
-      if (e.code === 'KeyB' || e.code === 'Escape') this.hideBuy();
+      if (e.code === 'KeyB' || e.code === 'Escape') { e.stopPropagation(); this.hideBuy(); }
     };
     document.addEventListener('keydown', this._buyHandler);
     this._onCloseBuy = onClose;
@@ -238,13 +260,14 @@ export class HUD {
   }
   hideScoreboard() { this.el.scoreboard.classList.remove('show'); }
 
-  showAAR(summary, won, onAgain, onSwitch, onWave) {
+  showAAR(summary, won, onAgain, onSwitch, onWave, extra) {
     const a = this.el.aar;
     a.querySelector('.aarResult').textContent = won ? 'VICTORY' : 'DEFEAT';
     a.querySelector('.aarResult').classList.toggle('won', won);
     a.querySelector('.aarRank').textContent = summary.rank;
     const row = (k, v) => `<div class="aarRow"><span>${k}</span><b>${v}</b></div>`;
     a.querySelector('.aarStats').innerHTML =
+      (extra || '') +
       row('Accuracy', (summary.accuracy * 100).toFixed(1) + '%') +
       row('Headshot share', (summary.headshotShare * 100).toFixed(1) + '%') +
       row('Kills', summary.kills) +

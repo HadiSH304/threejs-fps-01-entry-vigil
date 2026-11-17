@@ -1,9 +1,4 @@
-// objective.js — input, the plant/defuse objective and utility throws,
-// installed onto the Game prototype. Kept apart from main.js so the
-// orchestrator stays small and each module keeps one job:
-//   main.js      — boot, loop, rounds, economy
-//   objective.js — input binding, E-channel plant/defuse, smoke/flash
-//   bots.js      — bot AI and team plans
+// objective.js — input, plant/defuse, utility.
 
 import * as THREE from 'three';
 import { TIMERS, ECONOMY, clamp } from './config.js';
@@ -21,7 +16,7 @@ export function installObjective(Game) {
       if (e.code === 'KeyQ') this.player.throwUtility('smoke');
       if (e.code === 'KeyG') this.player.throwUtility('flash');
       if (e.code === 'KeyF') this.player.throwUtility('frag');
-      if (e.code === 'KeyB' && (this.phase === 'buy' || this.phase === 'live')) {
+      if (e.code === 'KeyB' && (this.phase === 'buy' || this.phase === 'live' || this.phase === 'lsBuy')) {
         if (this.hud.el.buy.classList.contains('show')) this.hud.hideBuy();
         else this.hud.showBuy(this.player.money, this.player.loadout, (id) => { this.player.buy(id); }, () => {});
       }
@@ -140,7 +135,7 @@ export function installObjective(Game) {
       const atkNear = this.actors.some((a) => a.team === 'attack' && !a.dead &&
         Math.hypot(a.pos.x - site.x, a.pos.z - site.z) < 10);
       const defNear = this.bots.some((b) => b.team === 'defend' && !b.dead &&
-        Math.hypot(b.pos.x - site.x, b.pos.z - site.z) < site.r + 3); // wall-pressed counts: the enclosure rim is 5.5-7 m out
+        Math.hypot(b.pos.x - site.x, b.pos.z - site.z) < site.r + 3);
       if (!atkNear && defNear) {
         this.defuseChannel = (this.defuseChannel || 0) + dt;
         if (this.defuseChannel >= TIMERS.defuse) { this.defuseChannel = 0; this.endRound('defend', 'defuse'); }

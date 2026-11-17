@@ -1,7 +1,4 @@
-// textures.js — every surface texture is drawn on a canvas at load: no external
-// assets, no network loads. Each texture layers a base colour, seeded noise grime,
-// and painted detail (mortar lines, stencils, hazard stripes, floor lettering).
-// Warm palettes are baked in per map so screenshots read warm at a glance.
+// textures.js — canvas textures.
 
 import * as THREE from 'three';
 import { mulberry32 } from './config.js';
@@ -56,7 +53,7 @@ export function makeBrick(seed = 7) {
     }
   }
   ctx.fillStyle = 'rgba(40,20,12,0.55)';
-  ctx.fillRect(0, 0, 512, 512); // mortar wash over everything, then bricks redrawn darker
+  ctx.fillRect(0, 0, 512, 512);
   grime(ctx, 512, 512, rng, 900, 0.10);
   streaks(ctx, 512, 512, rng, 26);
   return toTexture(c, 2);
@@ -110,18 +107,18 @@ export function makeMetal(seed = 31) {
   const rng = mulberry32(seed);
   const [c, ctx] = canvas(256, 256);
   ctx.fillStyle = '#5d6166'; ctx.fillRect(0, 0, 256, 256);
-  for (let i = 0; i < 90; i++) { // brushed streaks
+  for (let i = 0; i < 90; i++) {
     ctx.fillStyle = `rgba(255,255,255,${0.02 + rng() * 0.04})`;
     ctx.fillRect(0, rng() * 256, 256, 1 + rng() * 2);
   }
   ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 2;
-  for (let i = 0; i < 6; i++) { // rivet rows
+  for (let i = 0; i < 6; i++) {
     for (let x = 16; x < 256; x += 32) {
       ctx.beginPath(); ctx.arc(x, 20 + i * 40, 4, 0, Math.PI * 2); ctx.stroke();
     }
   }
   grime(ctx, 256, 256, rng, 500, 0.12);
-  streaks(ctx, 256, 256, rng, 14, 'rgba(120,60,10,0.14)'); // rust weep
+  streaks(ctx, 256, 256, rng, 14, 'rgba(120,60,10,0.14)');
   return toTexture(c, 2);
 }
 
@@ -129,7 +126,7 @@ export function makePlywood(seed = 41) {
   const rng = mulberry32(seed);
   const [c, ctx] = canvas(512, 512);
   ctx.fillStyle = '#a97e4e'; ctx.fillRect(0, 0, 512, 512);
-  for (let i = 0; i < 46; i++) { // wood grain
+  for (let i = 0; i < 46; i++) {
     ctx.strokeStyle = `rgba(90,55,20,${0.08 + rng() * 0.10})`;
     ctx.lineWidth = 1 + rng() * 2;
     ctx.beginPath();
@@ -231,18 +228,16 @@ export function makeVerticalSign(text, seed = 91) {
 export function makeSkyGradient(colors, seed = 101) {
   const rng = mulberry32(seed);
   const [c, ctx] = canvas(256, 512);
-  // Canvas y=0 is the zenith, y=256 the horizon, y=512 the nadir (below the
-  // floor, almost never seen): violet zenith -> warm mid -> amber horizon.
   const g = ctx.createLinearGradient(0, 0, 0, 512);
   g.addColorStop(0, colors[0]); g.addColorStop(0.3, colors[1]);
   g.addColorStop(0.5, colors[2]); g.addColorStop(0.66, colors[1]); g.addColorStop(1, colors[0]);
   ctx.fillStyle = g; ctx.fillRect(0, 0, 256, 512);
-  const glow = ctx.createRadialGradient(150, 245, 6, 150, 245, 170); // low sun, on the horizon
+  const glow = ctx.createRadialGradient(150, 245, 6, 150, 245, 170);
   glow.addColorStop(0, 'rgba(255, 228, 170, 0.95)');
   glow.addColorStop(0.35, 'rgba(255, 182, 95, 0.5)');
   glow.addColorStop(1, 'rgba(255, 150, 60, 0)');
   ctx.fillStyle = glow; ctx.fillRect(0, 0, 256, 512);
-  for (let i = 0; i < 6; i++) { // thin horizontal cloud bands, seeded so every load matches
+  for (let i = 0; i < 6; i++) {
     const y = 46 + i * 34 + rng() * 14;
     const w = 90 + rng() * 70, h = 4 + rng() * 5;
     ctx.fillStyle = i < 2 ? `rgba(196, 168, 214, ${0.05 + rng() * 0.05})` : `rgba(255, 214, 170, ${0.05 + rng() * 0.05})`;

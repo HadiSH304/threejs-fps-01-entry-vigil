@@ -17,7 +17,7 @@
   #hud { position: fixed; inset: 0; pointer-events: none; }
   .panel { background: var(--surface); border: 1px solid var(--hairline); border-radius: 4px; }
 
-  /* top bar: teams, scores, round pips, timer, ROUND x OF 16 */
+  
   #topbar { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 14px; align-items: center; padding: 6px 14px; font-family: var(--font-readout); font-size: 13px; white-space: nowrap; }
   #topbar .teamA { color: var(--attack); font-weight: 700; }
   #topbar .teamD { color: var(--defend); font-weight: 700; }
@@ -28,10 +28,20 @@
   .pip.won { background: var(--c, #f2a541); }
   .pipSep { color: var(--muted); margin: 0 4px; }
   #roundLabel { color: var(--muted); font-size: 12px; }
-  #planLabel { position: fixed; top: 54px; left: 50%; transform: translateX(-50%); font-family: var(--font-readout); font-size: 11px; color: var(--accent); letter-spacing: 1px; }
-  #roleLabel { position: fixed; top: 72px; left: 50%; transform: translateX(-50%); font-family: var(--font-readout); font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+  #planLabel { position: fixed; top: 54px; left: 50%; transform: translateX(-50%); font-family: var(--font-readout); font-size: 11px; color: var(--accent); letter-spacing: 1px; padding: 2px 10px; }
+  #roleLabel { position: fixed; top: 72px; left: 50%; transform: translateX(-50%); font-family: var(--font-readout); font-size: 11px; color: var(--muted); letter-spacing: 1px; padding: 2px 10px; }
 
-  /* crosshair with bloom gap + hitmarker */
+  
+  #bossBar, #coreBar { position: fixed; left: 50%; transform: translateX(-50%); width: 420px; display: none; font-family: var(--font-readout); font-size: 11px; text-align: center; }
+  #bossBar.show, #coreBar.show { display: block; }
+  #bossBar { top: 94px; color: #ff5040; }
+  #coreBar { top: 120px; color: var(--accent); }
+  #bossBar .bar, #coreBar .bar { height: 8px; background: #2c2620; border: 1px solid var(--hairline); margin-top: 2px; }
+  #bossBar .bar i, #coreBar .bar i { display: block; height: 100%; width: 100%; }
+  #bossBar .bar i { background: #ff5040; }
+  #coreBar .bar i { background: var(--accent); }
+
+  
   #crosshair { position: fixed; left: 50%; top: 50%; width: 30px; height: 30px; transform: translate(-50%,-50%); --gap: 5px; }
   #crosshair i { position: absolute; background: var(--ink); opacity: .9; }
   #crosshair i:nth-child(1) { left: 14px; top: calc(15px - var(--gap) - 7px); width: 2px; height: 7px; }
@@ -48,24 +58,24 @@
   #hitmarker i:nth-child(3) { top: 12px; left: 0; height: 2px; width: 8px; }
   #hitmarker i:nth-child(4) { top: 12px; right: 0; height: 2px; width: 8px; }
 
-  /* damage direction arc + flash whiteout */
+  
   #damageArc { position: fixed; left: 50%; top: 50%; width: 190px; height: 190px; transform: translate(-50%,-50%) rotate(var(--rot, 0deg)); border-radius: 50%; border-top: 5px solid rgba(255,60,40,.85); opacity: 0; transition: opacity 300ms; pointer-events: none; }
   #damageArc.show { opacity: 1; }
   #flashOverlay { position: fixed; inset: 0; background: #fff; opacity: 0; transition: opacity 600ms; pointer-events: none; }
 
-  /* kill feed + radio feed */
+  
   #killfeed { position: fixed; top: 92px; right: 16px; text-align: right; font-family: var(--font-readout); font-size: 13px; line-height: 1.7; }
   #killfeed .kfW { color: var(--muted); }
   #radio { position: fixed; top: 92px; left: 16px; font-family: var(--font-readout); font-size: 12px; line-height: 1.7; max-width: 380px; }
   #radio .radioLine { background: rgba(16,14,12,.72); border-left: 3px solid var(--accent); padding: 3px 8px; margin-bottom: 4px; }
   #radio .radioTag { color: var(--accent); font-weight: 700; }
 
-  /* radar: filled floor plan */
+  
   #radarWrap { position: fixed; left: 16px; bottom: 16px; }
   #radar { display: block; border: 1px solid var(--hairline); background: rgba(12,12,14,.85); }
   #radarLabel { text-align: center; font-family: var(--font-readout); font-size: 10px; color: var(--muted); letter-spacing: 2px; padding-top: 3px; }
 
-  /* bottom-right vitals */
+  
   #vitals { position: fixed; right: 16px; bottom: 16px; text-align: right; font-family: var(--font-readout); }
   #health { font-size: 34px; font-weight: 700; line-height: 1; }
   #health.low { color: #ff5040; }
@@ -80,14 +90,14 @@
   #utility .util { padding: 4px 8px; background: var(--surface); border: 1px solid var(--hairline); }
   .key { display: inline-block; min-width: 15px; text-align: center; background: #2c2620; border: 1px solid #555; border-radius: 3px; padding: 0 3px; margin-right: 5px; color: var(--ink); }
 
-  /* centre banner */
+  
   #banner { position: fixed; left: 50%; top: 26%; transform: translateX(-50%); text-align: center; opacity: 0; transition: opacity 250ms; }
   #banner.show { opacity: 1; }
   #banner .bannerMain { font-size: 30px; font-weight: 800; letter-spacing: 4px; color: var(--accent); text-shadow: 0 2px 12px rgba(0,0,0,.8); }
   #banner .bannerSub { font-family: var(--font-readout); font-size: 13px; color: var(--ink); margin-top: 4px; }
   #hint { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); font-family: var(--font-readout); font-size: 12px; color: var(--muted); }
 
-  /* overlays: deploy, buy, scoreboard, AAR */
+  
   .overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(8,6,5,.72); pointer-events: auto; z-index: 10; }
   .overlay.show { display: flex; }
   .card { width: 560px; max-width: 92vw; padding: 28px 32px; background: #191512; border: 1px solid var(--hairline); border-radius: 6px; }
@@ -132,7 +142,9 @@
 <div id="game"></div>
 <div id="hud">
   <div id="topbar" class="panel"><span class="teamA">EMBER JACKALS</span><span id="pips"></span><span id="score">0 — 0</span><span class="teamD">HARBOR WARDENS</span><span id="roundLabel">ROUND 1 OF 16</span><span id="timer">1:40</span></div>
-  <div id="planLabel"></div><div id="roleLabel"></div>
+  <div id="planLabel" class="panel"></div><div id="roleLabel" class="panel"></div>
+  <div id="bossBar"><span>FOUNDRY WARDEN</span><div class="bar"><i></i></div></div>
+  <div id="coreBar"><span>FURNACE CORE</span><div class="bar"><i></i></div></div>
   <div id="crosshair"><i></i><i></i><i></i><i></i></div>
   <div id="hitmarker"><i></i><i></i><i></i><i></i></div>
   <div id="damageArc"></div>
@@ -154,9 +166,11 @@
   <div class="planLine"></div>
   <div class="roleLine"></div>
   <p>Ember Jackals attack: plant the charge at Site A or Site B. Harbor Wardens defend. Buy between rounds with B. Q smoke, G flash, E plant / defuse, M switch map next round.</p>
+  <p><b style="color:var(--ink)">LAST STAND</b> — hold the Furnace Core through 7 waves. WIN: destroy the FOUNDRY WARDEN. LOSE: the Furnace Core falls.</p>
   <label for="sens">Mouse sensitivity</label>
   <input id="sens" type="range" min="0.3" max="2.5" step="0.1" value="1">
   <button class="btn deployBtn">DEPLOY</button>
+  <button class="btn ghost lsBtn">LAST STAND</button>
   <div class="controls">WASD move · Shift silent walk · C crouch · Space jump · R reload · 1/2/3/4 weapons · Q/G utility · E plant/defuse · TAB scoreboard · ESC pause</div>
 </div></div>
 

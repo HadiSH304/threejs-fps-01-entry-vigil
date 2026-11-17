@@ -1,21 +1,10 @@
-// damage.js — the damage pipeline, one function every shot in the game shares.
-// Order (CS2 game files): base x range falloff, x hitgroup multiplier, then x armor
-// penetration ONLY on armored hitgroups (head with helmet, torso, arms). Legs never
-// take penetration. There is NO extra x0.5 anywhere. A 100-point armor pool drains
-// at half the blocked amount; protection is full until the pool empties.
-//
-// Sanity targets (point blank, armored target, 100 HP / 100 armor):
-//   Kestrel-7 chest vs armor 36 x 0.775 = 27.9  (4 shots kill)
-//   Kestrel-7 bare chest 36                    (3 shots kill)
-//   Kestrel-7 headshot vs helmet 36 x 4 x 0.775 = 111.6 (lethal)
-//   Bastion-4 headshot vs helmet 33 x 4 x 0.70 = 92.4 (NOT lethal)
-//   Anvil .50 two armored chest shots 2 x 53 x 0.932 = 98.8 (just short)
+// damage.js — the damage pipeline.
 
 import { HITGROUP_MULT, ARMORED_GROUPS } from './config.js';
 
 export function falloffFactor(weapon, distanceM) {
   if (!weapon.falloff) return 1;
-  const units = distanceM / 0.0254; // 1 m = 39.37 units; 500 u = 12.7 m
+  const units = distanceM / 0.0254;
   return Math.pow(1 - weapon.falloff, units / 500);
 }
 
@@ -43,7 +32,7 @@ export function applyDamage(target, weapon, hitgroup, distanceM) {
   let drain = d.armorDrain;
   if (target.armor > 0 && drain > 0) {
     if (drain > target.armor) {
-      const overflow = (drain - target.armor) * 2; // blocked damage the pool could not soak
+      const overflow = (drain - target.armor) * 2;
       health += overflow * weapon.pen;
       drain = target.armor;
     }

@@ -1,9 +1,4 @@
-// physics.js — fixed-step AABB collision, kept apart from rendering.
-// Colliders are axis-aligned boxes { minX, maxX, minZ, maxZ, minY, maxY }.
-// A body is a vertical capsule approximated as a box of radius r and height h.
-// Movement resolves per axis (x, then z, then y) so bodies slide along walls
-// instead of sticking on corners. Ray tests resolve hitscan against the same
-// boxes the player collides with, so a bullet never passes a wall the body stops at.
+// physics.js — AABB collision.
 
 import * as THREE from 'three';
 

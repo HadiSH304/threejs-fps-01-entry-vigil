@@ -1,7 +1,4 @@
-// config.js — one place for every number the game balances on.
-// Weapon figures are CS2 game-file values (see fps-data-reference.md):
-// Kestrel-7 = AK-47, Bastion-4 = M4A4, Raptor-9 = MP9, Anvil .50 = Desert Eagle.
-// Economy and timers follow the CS2 competitive table in the same reference.
+// config.js — every balance number, one place.
 
 export const TEAMS = {
   attack: { id: 'attack', name: 'Ember Jackals', short: 'JACKALS', color: 0xff7a2a, css: '#ff7a2a' },
@@ -9,7 +6,7 @@ export const TEAMS = {
 };
 
 export const HITGROUP_MULT = { head: 4, chest: 1, stomach: 1.25, arm: 1, leg: 0.75 };
-export const ARMORED_GROUPS = new Set(['head', 'chest', 'stomach', 'arm']); // legs never armored
+export const ARMORED_GROUPS = new Set(['head', 'chest', 'stomach', 'arm']);
 
 export const WEAPONS = {
   kestrel: {
@@ -71,7 +68,7 @@ export const ECONOMY = {
   plantTeam: 300,
   plantedLost: 600,
   defuseBonus: 300,
-  lossBonus: [1400, 1900, 2400, 2900, 3400], // ladder by consecutive losses, step drops one on a win
+  lossBonus: [1400, 1900, 2400, 2900, 3400],
   armor: 650,
   armorHelmet: 1000,
   defuseKit: 400,
@@ -79,11 +76,11 @@ export const ECONOMY = {
 };
 
 export const TIMERS = {
-  buyPhase: 20,      // seconds
+  buyPhase: 20,
   round: 100,
-  plant: 3.2,        // channel, stationary
-  charge: 40,        // detonation countdown after plant
-  defuse: 10,        // 5 s with a defuse kit
+  plant: 3.2,
+  charge: 40,
+  defuse: 10,
   defuseKit: 5,
   halftimeAfterRound: 8,
   winRounds: 9,
@@ -91,10 +88,10 @@ export const TIMERS = {
 };
 
 export const MOVEMENT = {
-  walkMult: 0.52,        // Shift silent walk
-  crouchMult: 0.34,      // crouch-move
-  accel: 42,             // m/s^2 ground acceleration
-  friction: 9.5,         // ground friction (fast stop, deadzone feel)
+  walkMult: 0.52,
+  crouchMult: 0.34,
+  accel: 42,
+  friction: 9.5,
   airAccel: 8,
   jumpSpeed: 6.4,
   gravity: 19.5,
@@ -109,8 +106,8 @@ export const ACCURACY = {
   moveMultMax: 27,
   crouchMult: 0.75,
   airMult: 6.5,
-  deadzone: 0.275,       // below 27.5% of max speed counts as stopped
-  bloomPerShot: 0.0016,  // spread added per shot, decays on the recovery timer
+  deadzone: 0.275,
+  bloomPerShot: 0.0016,
   maxBloom: 0.05,
 };
 

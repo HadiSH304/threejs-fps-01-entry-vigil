@@ -1,7 +1,4 @@
-// bots.js — bot AI on the BOT_TABLE state machine (fsm.js). Vision is a raycast
-// cone blocked by walls and smoke. Fire is raycast-resolved through
-// fireHitscan(), the same path as the player. Team plans assign routes and
-// roles; radio callouts on real events move teammates. Difficulty scales by wave.
+// bots.js — bot AI on the BOT_TABLE machine.
 
 import * as THREE from 'three';
 import { createMachine, BOT_TABLE } from './fsm.js';
@@ -30,20 +27,20 @@ export class Bot {
     this.hasHelmet = false;
     this.dead = false;
     this.crouched = false;
-    this.weapon = null; // set by Game from config
+    this.weapon = null;
     this.ammo = 30;
     this.isCarrier = false;
     this.hasLOS = false;
     this.heardShot = false;
     this.targetAlive = true;
     this.atSite = false;
-    this.target = null; // current enemy actor
+    this.target = null;
     this.route = [];
     this.routeIdx = 0;
     this.holdPos = null;
     this.speed = 3.4;
-    this.reaction = 0.55 - wave * 0.05; // faster reaction on higher waves
-    this.aimError = Math.max(0.004, 0.02 - wave * 0.002); // tighter aim
+    this.reaction = 0.55 - wave * 0.05;
+    this.aimError = Math.max(0.004, 0.02 - wave * 0.002);
     this.burstLeft = 0;
     this.burstTimer = 0;
     this.fireTimer = 0;
@@ -51,8 +48,8 @@ export class Bot {
     this.strafeTimer = 0;
     this.seeTimer = 0;
     this.lastKnown = null;
-    this.lean = 0; // visual lean while strafing
-    this.mesh = null; // built by buildBotMesh
+    this.lean = 0;
+    this.mesh = null;
     this.nameTag = null;
     this.fsm = createMachine(BOT_TABLE, 'patrol', { bot: this });
     this.rng = mulberry32(1000 + this.id * 77 + wave * 13);
@@ -84,7 +81,7 @@ export class Bot {
       const to = new THREE.Vector3().subVectors(e.pos, this.pos);
       const ang = Math.atan2(-to.x, -to.z) - this.yaw;
       const norm = Math.atan2(Math.sin(ang), Math.cos(ang));
-      if (Math.abs(norm) > 1.15 && d > 6) continue; // outside the vision cone
+      if (Math.abs(norm) > 1.15 && d > 6) continue;
       const eye = this.eyePos();
       const targetEye = new THREE.Vector3(e.pos.x, e.pos.y + 1.4, e.pos.z);
       if (segmentBlocked(eye, targetEye, game.world.colliders)) continue;
@@ -128,7 +125,7 @@ export class Bot {
       dest = this.nearestCover(game);
       speed = this.speed * 1.1;
     } else if (state === 'plant' && this.atSite) {
-      dest = null; // hold still and channel the plant
+      dest = null;
     } else if (this.route.length && this.routeIdx < this.route.length) {
       dest = new THREE.Vector3(this.route[this.routeIdx][0], 0, this.route[this.routeIdx][1]);
       if (this.pos.distanceTo(dest) < 1.2) this.routeIdx++;
@@ -194,14 +191,14 @@ export class Bot {
     if (this.burstLeft <= 0) {
       this.burstTimer -= dt;
       if (this.burstTimer <= 0) {
-        this.burstLeft = 3 + Math.floor(this.rng() * 3) + this.wave; // longer bursts on higher waves
+        this.burstLeft = 3 + Math.floor(this.rng() * 3) + this.wave;
         this.burstTimer = 0.5 + this.rng() * 0.7;
       } else return;
     }
     const interval = 60 / this.weapon.rpm;
     if (this.fireTimer > 0) return;
     this.fireTimer = interval;
-    if (this.ammo <= 0) { this.ammo = this.weapon.mag; return; } // instant bot reload
+    if (this.ammo <= 0) { this.ammo = this.weapon.mag; return; }
     this.ammo--;
     this.burstLeft--;
     const dir = this.aimDir();
@@ -246,7 +243,7 @@ export class Bot {
     const body = this.mesh.userData.body;
     if (!body) return;
     if (down) {
-      body.rotation.z = Math.PI / 2; // fall and stay as a downed body
+      body.rotation.z = Math.PI / 2;
       body.position.y = 0.35;
       this.mesh.userData.tag.visible = false;
     } else {
@@ -269,7 +266,7 @@ export function buildBotMesh(bot, scene) {
   const vest = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.4, 0.42), accent);
   vest.position.y = 1.22; body.add(vest);
   const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.64, 0.07, 0.38), accent);
-  stripe.position.y = 1.52; body.add(stripe); // team shoulder band, reads at contact-sheet size
+  stripe.position.y = 1.52; body.add(stripe);
   const head = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.32, 0.3), skin);
   head.position.y = 1.68; head.castShadow = true; body.add(head);
   const helmet = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.14, 0.36), accent);
@@ -306,8 +303,8 @@ function makeNameTag(name, role, color) {
   ctx.fillStyle = 'rgba(10,10,12,0.82)';
   ctx.fillRect(0, 0, 288, 72);
   ctx.fillStyle = '#' + color.toString(16).padStart(6, '0');
-  ctx.fillRect(0, 0, 10, 72); // team band, left
-  ctx.fillRect(0, 66, 288, 6); // team band, bottom — the tag reads as a team plate at small size
+  ctx.fillRect(0, 0, 10, 72);
+  ctx.fillRect(0, 66, 288, 6);
   ctx.fillStyle = '#f2ead8';
   ctx.font = 'bold 28px monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   ctx.fillText(name, 22, 24);

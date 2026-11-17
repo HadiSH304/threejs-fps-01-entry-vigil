@@ -1,20 +1,4 @@
-// main.js — VIGIL // FOUNDRY. Boot, fixed-step loop, round orchestration.
-// Design notes (factual mapping to the five judge criteria):
-//   1. Complete game — deploy/buy/live/planted/end/AAR via the ROUND_TABLE state
-//      machine (fsm.js); mouse-look movement (player.js), firing/reload
-//      (weapons.js), bots that move and shoot back (bots.js), HUD with health,
-//      ammo, timer and score (hud.js). Rounds end and start again.
-//   2. Gunplay & movement — CS2 damage pipeline (damage.js), deterministic
-//      recoil + movement-scaled spread (weapons.js), acceleration/friction and
-//      AABB sliding collision (player.js, physics.js).
-//   3. Tactics — plant/defuse, CS2 economy, buy menu, six weapons + smoke/
-//      flash/frag, team plans and radio callouts (bots.js); bot vision is
-//      raycast-blocked by walls and smoke.
-//   4. Map & look — both maps as layout data (maps.js), built by world.js with
-//      canvas textures (textures.js), hero props and warm palettes.
-//   5. Code — one job per module; simulation steps at fixed 1/60 s apart from
-//      rendering; state lives in the Game context; round flow and bot behaviour
-//      are transition tables, not flag spaghetti.
+// main.js — boot, fixed-step loop, rounds.
 
 import * as THREE from 'three';
 import { MAPS } from './maps.js';
@@ -29,6 +13,7 @@ import { Telemetry } from './telemetry.js';
 import { createMachine, ROUND_TABLE } from './fsm.js';
 import { sanityChecks } from './damage.js';
 import { installObjective } from './objective.js';
+import { installLastStand } from './laststand.js';
 
 const FIXED_DT = 1 / 60;
 
@@ -85,7 +70,7 @@ export class Game {
     this.renderer.setSize(innerWidth, innerHeight);
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFShadowMap; // three 0.187 removed PCFSoft; PCF is its fallback
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.15;
     document.getElementById('game').appendChild(this.renderer.domElement);
@@ -254,7 +239,8 @@ export class Game {
       ? 'EXECUTE A — Entry, Support, Carrier, Lurker'
       : 'SPLIT 2-2 — hold both sites';
     this.hud.showDeploy(this.mapDef.name, label, this.player.role || 'Entry', this.hud.sensitivity,
-      () => { this.startRound(); });
+      () => { this.startRound(); },
+      () => { this.startLastStand(); });
   }
 
   onHit(actor, res, attacker) {
@@ -308,7 +294,7 @@ export class Game {
     const defAlive = this.actors.filter((a) => a.team === 'defend' && !a.dead).length;
     if (atkAlive === 0) this.endRound('defend', 'elimination');
     else if (defAlive === 0) {
-      if (this.planted) this.endRound('attack', 'detonation'); // charge still goes off
+      if (this.planted) this.endRound('attack', 'detonation');
       else this.endRound('attack', 'elimination');
     }
   }
@@ -376,6 +362,7 @@ export class Game {
   }
 
   step(dt) {
+    if (this.ls && (this.phase === 'lsWave' || this.phase === 'lsBuy')) this.ls.step(dt);
     if (this.phase === 'buy') {
       this.phaseTime -= dt;
       this.hud.setTimer(this.phaseTime, 'buy');
@@ -456,11 +443,10 @@ export class Game {
   }
 }
 
-// URL shot/soak parameters live here, after the game systems: the outline's
-// first declarations are the fixed-step constant and the Game state object.
 const params = new URLSearchParams(location.search);
 const SHOT = params.get('shot') || '';
 const SEED = parseInt(params.get('seed') || '1', 10);
 const SOAK = params.get('soak') === '1';
 
 installObjective(Game);
+installLastStand(Game);

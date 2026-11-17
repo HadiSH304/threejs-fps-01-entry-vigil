@@ -1,11 +1,5 @@
-// fsm.js — round flow and bot behaviour as explicit, hand-written state machines.
-// One declarative table + one pure transition(state, event) driver per machine.
-// Named guard functions are referenced by name in the table; state changes happen
-// ONLY through the table — no flag spaghetti. An illegal event is a no-op.
-// Win conditions are checked after every event (see checkWin in main.js).
+// fsm.js — transition tables + driver.
 
-// Guards take (ctx, payload) and return a boolean. They are named so the table
-// reads like the design doc.
 export const Guards = {
   hasLineOfSight: (ctx) => ctx.bot?.hasLOS === true,
   lostLineOfSight: (ctx) => ctx.bot?.hasLOS === false,
@@ -21,6 +15,9 @@ export const Guards = {
   chargePlanted: (ctx) => ctx.round?.phase === 'planted',
   timeExpired: (ctx) => (ctx.round?.timeLeft ?? 99) <= 0,
   targetDown: (ctx) => ctx.bot?.targetAlive === false,
+  lsWaveClear: (ctx) => ctx.ls?.waveDown() === true,
+  lsBossDown: (ctx) => ctx.ls?.boss?.dead === true,
+  lsCoreDown: (ctx) => (ctx.ls?.coreHp ?? 1) <= 0,
   always: () => true,
 };
 
@@ -50,6 +47,34 @@ export const ROUND_TABLE = {
   aar: [
     { event: 'playAgain', to: 'deploy', guard: 'always' },
     { event: 'nextWave', to: 'deploy', guard: 'always' },
+  ],
+};
+
+export const LS_TABLE = {
+  deploy: [
+    { event: 'startWave', to: 'wave', guard: 'always' },
+  ],
+  wave: [
+    { event: 'waveClear', to: 'buy', guard: 'lsWaveClear' },
+    { event: 'bossDown', to: 'victory', guard: 'lsBossDown' },
+    { event: 'coreDown', to: 'defeat', guard: 'lsCoreDown' },
+  ],
+  buy: [
+    { event: 'startWave', to: 'wave', guard: 'always' },
+    { event: 'startBoss', to: 'boss', guard: 'always' },
+  ],
+  boss: [
+    { event: 'bossDown', to: 'victory', guard: 'lsBossDown' },
+    { event: 'coreDown', to: 'defeat', guard: 'lsCoreDown' },
+  ],
+  victory: [
+    { event: 'showAAR', to: 'aar', guard: 'always' },
+  ],
+  defeat: [
+    { event: 'showAAR', to: 'aar', guard: 'always' },
+  ],
+  aar: [
+    { event: 'playAgain', to: 'deploy', guard: 'always' },
   ],
 };
 
@@ -84,7 +109,7 @@ export const BOT_TABLE = {
     { event: 'interrupted', to: 'engage', guard: 'hasLineOfSight' },
     { event: 'down', to: 'downed', guard: 'always' },
   ],
-  downed: [], // terminal for the round; a downed bot stays a downed body
+  downed: [],
 };
 
 export function transition(table, state, event, ctx, guards = Guards) {

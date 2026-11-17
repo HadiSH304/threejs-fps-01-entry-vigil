@@ -1,7 +1,4 @@
-// audio.js — 100% Web Audio API synthesis, zero audio files.
-// Layered noise + oscillator gunfire (distinct per weapon), metallic headshot
-// dink vs body thud, reload clicks, velocity-tied footsteps, smoke hiss and a
-// flashbang ring that decays. Nothing is loaded; everything is scheduled.
+// audio.js — Web Audio synthesis, no files.
 
 export class AudioSys {
   constructor() {
@@ -34,7 +31,7 @@ export class AudioSys {
     if (!this.ctx || !this.enabled) return;
     this.ensure();
     const now = this.ctx.currentTime;
-    const att = Math.max(0.12, 1 - distanceM / 90); // distance attenuation
+    const att = Math.max(0.12, 1 - distanceM / 90);
     const prof = {
       kestrel: { f: 1800, len: 0.16, g: 0.9, osc: 95 },
       bastion: { f: 2200, len: 0.13, g: 0.8, osc: 110 },

@@ -1,15 +1,7 @@
-// weapons.js — viewmodels, firing, recoil and the ONE hitscan path. Player
-// shots and bot shots both go through fireHitscan(): LOS raycast vs world and
-// body hitboxes, spread from the shooter's aim state, hitgroup from the actual
-// hit position, damage through damage.js. Bot fire is raycast-resolved, never
-// probability-based.
+// weapons.js — viewmodels, hitscan, FX.
 
-// Deterministic per-weapon recoil pattern: bullets 1-10 climb near-vertically,
-// 11-20 swing left then right in a widening S, 21-30 sweep wide. The camera
-// takes pitch/yaw kick and a spring pulls it back; waiting out the recovery
-// timer resets the pattern index to bullet 1.
 export function recoilOffset(weapon, index) {
-  const k = weapon.kick / 30; // AK kick 30 is the reference
+  const k = weapon.kick / 30;
   let pitch = 0, yaw = 0;
   if (index < 10) { pitch = (0.55 + index * 0.10) * k; yaw = (index % 2 ? 0.06 : -0.05) * k; }
   else if (index < 20) {
@@ -19,14 +11,14 @@ export function recoilOffset(weapon, index) {
     const s = (index - 20) / 10;
     pitch = (1.9 + s * 0.2) * k; yaw = Math.sin(s * Math.PI * 2.2) * 1.5 * k;
   }
-  return { pitch: pitch * 0.011, yaw: yaw * 0.011 }; // radians of camera kick
+  return { pitch: pitch * 0.011, yaw: yaw * 0.011 };
 }
 
 export function spreadFor(weapon, speed, maxSpeed, crouched, airborne, bloom) {
   let m = 1;
   const ratio = maxSpeed > 0 ? Math.min(1, speed / maxSpeed) : 0;
   if (airborne) m = 6.5;
-  else m = 1 + ratio * ratio * 26; // ~27x at full run
+  else m = 1 + ratio * ratio * 26;
   if (crouched) m *= 0.75;
   return Math.max(0.0004, weapon.spread * m + bloom);
 }
@@ -36,7 +28,7 @@ import { applyDamage } from './damage.js';
 import { rayWorld } from './physics.js';
 
 export function rayBody(origin, dir, actor, maxDist) {
-  const p = actor.pos; // THREE.Vector3 feet
+  const p = actor.pos;
   const h = actor.crouched ? 1.15 : 1.78;
   const headY = p.y + (actor.crouched ? 0.95 : 1.55);
   const boxes = [
@@ -114,53 +106,53 @@ export function buildViewmodel(weaponId) {
   const g = new THREE.Group();
   const dark = VM_PART.dark, mid = VM_PART.mid, light = VM_PART.light, acc = VM_PART.accent;
   if (weaponId === 'kestrel') {
-    g.add(vmBox(0.09, 0.11, 0.55, dark, 0, 0, 0));            // receiver
-    g.add(vmCyl(0.035, 0.5, mid, 0, 0.01, -0.5));              // barrel
-    g.add(vmBox(0.06, 0.2, 0.12, VM_PART.wood, 0, -0.14, 0.08)); // curved magazine
-    g.add(vmBox(0.05, 0.12, 0.03, light, 0, 0.1, -0.12));     // tall front sight blade
-    g.add(vmBox(0.09, 0.02, 0.05, light, 0, 0.15, -0.12));    // front sight crossbar (T silhouette)
-    g.add(vmBox(0.09, 0.05, 0.03, light, 0, 0.08, 0.2));      // rear sight block
-    g.add(vmBox(0.015, 0.07, 0.03, light, -0.045, 0.1, 0.2)); // rear sight ears
+    g.add(vmBox(0.09, 0.11, 0.55, dark, 0, 0, 0));
+    g.add(vmCyl(0.035, 0.5, mid, 0, 0.01, -0.5));
+    g.add(vmBox(0.06, 0.2, 0.12, VM_PART.wood, 0, -0.14, 0.08));
+    g.add(vmBox(0.05, 0.12, 0.03, light, 0, 0.1, -0.12));
+    g.add(vmBox(0.09, 0.02, 0.05, light, 0, 0.15, -0.12));
+    g.add(vmBox(0.09, 0.05, 0.03, light, 0, 0.08, 0.2));
+    g.add(vmBox(0.015, 0.07, 0.03, light, -0.045, 0.1, 0.2));
     g.add(vmBox(0.015, 0.07, 0.03, light, 0.045, 0.1, 0.2));
-    g.add(vmBox(0.08, 0.05, 0.16, VM_PART.wood, 0, -0.01, 0.32)); // wooden stock
-    g.add(vmBox(0.05, 0.1, 0.06, dark, 0, -0.1, 0.2));        // grip
-    g.add(vmBox(0.02, 0.03, 0.3, acc, 0.045, 0.06, -0.1));    // amber accent rail
-    g.add(vmBox(0.095, 0.02, 0.5, acc, 0, 0.065, -0.02));     // amber top band — reads at small size
+    g.add(vmBox(0.08, 0.05, 0.16, VM_PART.wood, 0, -0.01, 0.32));
+    g.add(vmBox(0.05, 0.1, 0.06, dark, 0, -0.1, 0.2));
+    g.add(vmBox(0.02, 0.03, 0.3, acc, 0.045, 0.06, -0.1));
+    g.add(vmBox(0.095, 0.02, 0.5, acc, 0, 0.065, -0.02));
   } else if (weaponId === 'bastion') {
     g.add(vmBox(0.09, 0.1, 0.5, dark, 0, 0, 0));
     g.add(vmCyl(0.03, 0.45, mid, 0, 0.01, -0.46));
-    g.add(vmBox(0.06, 0.16, 0.1, mid, 0, -0.12, 0.06));       // straight magazine
-    g.add(vmBox(0.1, 0.04, 0.3, light, 0, 0.075, -0.05));     // carry handle / sight rail
-    g.add(vmBox(0.015, 0.06, 0.03, light, -0.045, 0.11, 0.08)); // rear sight ears
+    g.add(vmBox(0.06, 0.16, 0.1, mid, 0, -0.12, 0.06));
+    g.add(vmBox(0.1, 0.04, 0.3, light, 0, 0.075, -0.05));
+    g.add(vmBox(0.015, 0.06, 0.03, light, -0.045, 0.11, 0.08));
     g.add(vmBox(0.015, 0.06, 0.03, light, 0.045, 0.11, 0.08));
-    g.add(vmBox(0.04, 0.09, 0.03, light, 0, 0.1, -0.16));     // front sight blade
-    g.add(vmBox(0.07, 0.09, 0.14, dark, 0, -0.01, 0.3));      // stock
+    g.add(vmBox(0.04, 0.09, 0.03, light, 0, 0.1, -0.16));
+    g.add(vmBox(0.07, 0.09, 0.14, dark, 0, -0.01, 0.3));
     g.add(vmBox(0.05, 0.1, 0.06, dark, 0, -0.1, 0.18));
     g.add(vmBox(0.02, 0.025, 0.28, acc, -0.045, 0.055, -0.08));
-    g.add(vmBox(0.095, 0.02, 0.46, acc, 0, 0.06, -0.02));     // amber top band
+    g.add(vmBox(0.095, 0.02, 0.46, acc, 0, 0.06, -0.02));
   } else if (weaponId === 'raptor') {
     g.add(vmBox(0.08, 0.09, 0.4, dark, 0, 0, 0));
     g.add(vmCyl(0.04, 0.3, mid, 0, 0.01, -0.32));
-    g.add(vmBox(0.05, 0.22, 0.09, mid, 0, -0.15, 0.1));       // long SMG magazine
-    g.add(vmBox(0.07, 0.06, 0.2, light, 0, 0.07, -0.1));      // top sight
-    g.add(vmBox(0.04, 0.09, 0.03, light, 0, 0.1, -0.16));     // front sight blade
-    g.add(vmBox(0.06, 0.08, 0.12, dark, 0, -0.01, 0.26));     // folding stock
+    g.add(vmBox(0.05, 0.22, 0.09, mid, 0, -0.15, 0.1));
+    g.add(vmBox(0.07, 0.06, 0.2, light, 0, 0.07, -0.1));
+    g.add(vmBox(0.04, 0.09, 0.03, light, 0, 0.1, -0.16));
+    g.add(vmBox(0.06, 0.08, 0.12, dark, 0, -0.01, 0.26));
     g.add(vmBox(0.02, 0.03, 0.2, acc, 0.04, 0.05, -0.05));
-    g.add(vmBox(0.085, 0.02, 0.36, acc, 0, 0.055, -0.02));    // amber top band
+    g.add(vmBox(0.085, 0.02, 0.36, acc, 0, 0.055, -0.02));
   } else if (weaponId === 'hinge') {
-    g.add(vmBox(0.06, 0.09, 0.24, dark, 0, 0, 0));            // slide
-    g.add(vmBox(0.055, 0.05, 0.22, mid, 0, -0.06, 0.01));     // frame
-    g.add(vmBox(0.05, 0.12, 0.07, VM_PART.wood, 0, -0.13, 0.09)); // grip
-    g.add(vmBox(0.015, 0.02, 0.02, acc, 0, 0.055, -0.11));    // front sight dot
+    g.add(vmBox(0.06, 0.09, 0.24, dark, 0, 0, 0));
+    g.add(vmBox(0.055, 0.05, 0.22, mid, 0, -0.06, 0.01));
+    g.add(vmBox(0.05, 0.12, 0.07, VM_PART.wood, 0, -0.13, 0.09));
+    g.add(vmBox(0.015, 0.02, 0.02, acc, 0, 0.055, -0.11));
   } else if (weaponId === 'anvil') {
-    g.add(vmBox(0.07, 0.1, 0.3, light, 0, 0, 0));             // heavy slide
+    g.add(vmBox(0.07, 0.1, 0.3, light, 0, 0, 0));
     g.add(vmBox(0.06, 0.05, 0.28, dark, 0, -0.07, 0.01));
     g.add(vmBox(0.055, 0.13, 0.08, VM_PART.wood, 0, -0.14, 0.1));
     g.add(vmBox(0.02, 0.025, 0.03, acc, 0, 0.06, -0.14));
-  } else { // talon knife
-    g.add(vmBox(0.015, 0.05, 0.34, light, 0, 0.01, -0.12));   // blade
-    g.add(vmBox(0.04, 0.06, 0.12, dark, 0, 0, 0.1));          // handle
-    g.add(vmBox(0.05, 0.02, 0.03, acc, 0, 0.02, 0.03));       // guard accent
+  } else {
+    g.add(vmBox(0.015, 0.05, 0.34, light, 0, 0.01, -0.12));
+    g.add(vmBox(0.04, 0.06, 0.12, dark, 0, 0, 0.1));
+    g.add(vmBox(0.05, 0.02, 0.03, acc, 0, 0.02, 0.03));
   }
   g.traverse((o) => { if (o.isMesh) { o.castShadow = false; } });
   g.scale.setScalar(1.25);
@@ -174,9 +166,7 @@ export function createEffects(scene) {
   const flash = new THREE.PointLight(0xffc266, 0, 9, 1.8);
   scene.add(flash);
   let flashUntil = 0;
-  // Soft round sprite: radial gradient, opaque core fading to nothing. Point
-  // sprites without a map render as hard squares — the flat red rectangles
-  // that haunted the v1 cover. Everything below uses this texture.
+
   const spriteTex = (() => {
     const c = document.createElement('canvas');
     c.width = 64; c.height = 64;
@@ -207,7 +197,7 @@ export function createEffects(scene) {
     pool.push({ obj: line, until: performance.now() + 90, kind: 'line' });
   }
   function impact(point, mat, headshot) {
-    const n = headshot ? 16 : 8; // headshots burst gold sparks
+    const n = headshot ? 16 : 8;
     const geo = new THREE.BufferGeometry();
     const pos = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) {
@@ -228,7 +218,6 @@ export function createEffects(scene) {
     flash.position.copy(pos);
     flash.intensity = 55;
     flashUntil = performance.now() + 55;
-    // Visible flash sprite just ahead of the muzzle, along the shot line.
     flashSprite.position.copy(pos);
     if (dir) flashSprite.position.addScaledVector(dir, 0.55);
     flashSprite.visible = true;

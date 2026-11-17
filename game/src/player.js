@@ -1,7 +1,4 @@
-// player.js — the player controller: pointer-lock mouse look, WASD movement
-// with acceleration and friction (counter-strafe stop), crouch, jump, weapon
-// switching, firing with bloom + recoil, reload, buy, plant/defuse channels,
-// utility throws. Movement and accuracy numbers come from config.js.
+// player.js — player controller.
 
 import * as THREE from 'three';
 import { WEAPONS, UTILITY, ECONOMY, MOVEMENT, ACCURACY, clamp } from './config.js';
@@ -186,7 +183,7 @@ export class Player {
     this.recoilYaw += kick.yaw;
     this.pitch = clamp(this.pitch + kick.pitch * 0.35, -1.45, 1.45);
     if (this.viewmodelGroup) {
-      this.viewmodelGroup.position.z = -0.62 + 0.06; // kickback
+      this.viewmodelGroup.position.z = -0.62 + 0.06;
       setTimeout(() => { if (this.viewmodelGroup) this.viewmodelGroup.position.z = -0.62; }, 60);
     }
     if (res.hit && res.actor) this.game.onHit(res.actor, res, this);

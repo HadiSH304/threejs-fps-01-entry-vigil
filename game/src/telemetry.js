@@ -1,11 +1,4 @@
-// telemetry.js — match telemetry and the After-Action Report rank.
-// Tracked across the match: shots, hits, headshot kills, kills, damage dealt
-// and taken, utility deployed, enemies blinded, smoke line-of-sight denials,
-// clear time. The Tactical Rank is a published composite:
-//   accuracy 40 pts / headshot share 25 / damage exchange 15 / utility 10 / speed 10
-// S+ at 88+ with accuracy >= 40% and headshot share >= 45%;
-// S at 74+ with accuracy >= 35% and headshot share >= 40%;
-// A at 58+; B at 40+; C below.
+// telemetry.js — match telemetry + AAR rank.
 
 export class Telemetry {
   constructor() { this.resetMatch(); }
@@ -18,7 +11,7 @@ export class Telemetry {
     this.smokeDenials = 0; this.botShots = 0;
     this.rounds = [];
     this.matchStart = performance.now();
-    this.clearTime = 0; // seconds from first round start to match end
+    this.clearTime = 0;
   }
 
   startRound() { this.roundStart = performance.now(); }

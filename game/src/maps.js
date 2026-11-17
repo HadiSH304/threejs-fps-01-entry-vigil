@@ -1,14 +1,11 @@
-// maps.js — both maps as pure layout data. ONE builder (world.js) turns these
-// arrays into geometry, colliders and radar floor plans, so a map is data, not code.
-// Units are metres; y is up; a wall is { x, z, w, d, h, mat } centred on x/z.
-// A doorway is simply a gap between two wall segments. Sites carry floor lettering.
+// maps.js — both maps as layout data.
 
 export const MAPS = {
   foundry: {
     id: 'foundry', name: 'Foundry Yard', short: 'FOUNDRY', outdoor: true,
-    bounds: { x: 34, z: 26 }, // half-extents of the playable yard
+    bounds: { x: 34, z: 26 },
     palette: {
-      sky: ['#3d2b4a', '#8a4a44', '#f2a541'], // dusk: violet zenith -> rose -> amber horizon
+      sky: ['#3d2b4a', '#8a4a44', '#f2a541'],
       fog: 0x3a2418, fogDensity: 0.011,
       hemiSky: 0xffd9a0, hemiGround: 0x4a2c1a, hemiInt: 0.85,
       sun: 0xffb066, sunInt: 2.4, sunPos: [-28, 38, 18],
@@ -38,7 +35,7 @@ export const MAPS = {
       { x: -2, z: 18, w: 8, d: 1, h: 4, mat: 'concrete' },
     ],
     crates: [
-      { x: -3, z: -2, w: 2.2, d: 2.2, h: 1.2, stack: 2 }, // double-stacked at mid
+      { x: -3, z: -2, w: 2.2, d: 2.2, h: 1.2, stack: 2 },
       { x: 3, z: -2, w: 2.2, d: 2.2, h: 1.2, stack: 1 },
       { x: -22, z: -8, w: 2.2, d: 2.2, h: 1.2, stack: 2 },
       { x: 22, z: 8, w: 2.2, d: 2.2, h: 1.2, stack: 2 },
@@ -46,7 +43,7 @@ export const MAPS = {
       { x: 12, z: 14, w: 2.2, d: 2.2, h: 1.2, stack: 1 },
       { x: -26, z: 18, w: 2.2, d: 2.2, h: 1.2, stack: 1 },
     ],
-    barriers: [ // waist-high plywood cover
+    barriers: [
       { x: -14, z: 0, w: 3, d: 0.3, h: 1.1 },
       { x: 14, z: 2, w: 3, d: 0.3, h: 1.1 },
       { x: 0, z: -14, w: 3, d: 0.3, h: 1.1 },
@@ -159,7 +156,7 @@ export const MAPS = {
     targetLanes: [
       { x: -18, z: -14, dir: 1 }, { x: -14, z: -14, dir: 1 }, { x: 18, z: -14, dir: 1 },
     ],
-    ceilingPanels: 14, // fluorescent ceiling panels down the main lane
+    ceilingPanels: 14,
   },
 };
 

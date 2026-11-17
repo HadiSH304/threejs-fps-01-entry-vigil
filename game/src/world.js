@@ -1,8 +1,4 @@
-// world.js — ONE data-driven builder turns a map definition (maps.js) into the
-// scene, colliders, hero props and teardown. Both maps share this code; the map
-// data is the only thing that differs. Teardown disposes the world group and
-// map-owned materials/textures, drops colliders, and clears bots, smokes and
-// projectiles before a rebuild.
+// world.js — map data to scene.
 
 import * as THREE from 'three';
 import { buildColliders, pointBlocked } from './physics.js';
@@ -33,7 +29,7 @@ function buildFurnace(hero, textures) {
   const base = new THREE.Mesh(new THREE.CylinderGeometry(4.6, 5.4, 3.2, 18), ironDark);
   base.position.y = 1.6; base.castShadow = true; g.add(base);
   const body = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 4.6, 6.0, 18), iron);
-  body.position.y = 3.2 + 3.0 - 0.04; body.castShadow = true; g.add(body); // 0.04 seam overlap
+  body.position.y = 3.2 + 3.0 - 0.04; body.castShadow = true; g.add(body);
   const neck = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 3.4, 4.4, 18), rust);
   neck.position.y = 9.2 + 2.2 - 0.04; neck.castShadow = true; g.add(neck);
   const stack = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 2.2, 3.6, 14), ironDark);
@@ -140,7 +136,7 @@ export function buildWorld(scene, mapDef) {
 
   const pal = mapDef.palette;
   scene.fog = new THREE.FogExp2(pal.fog, pal.fogDensity);
-  scene.background = null; // sky dome below replaces the clear colour
+  scene.background = null;
 
   const sky = new THREE.Mesh(
     new THREE.SphereGeometry(220, 24, 16),
